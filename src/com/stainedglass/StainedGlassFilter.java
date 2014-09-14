@@ -20,7 +20,6 @@ public class StainedGlassFilter {
     private List<Point> centerPoints;
     private Map<Point, List<Point>> regions;
     private BufferedImage outputImage = null;
-    KDTree tree = new KDTree(2);
     
     StainedGlassFilter(File input, File output, int points){
         
@@ -30,27 +29,20 @@ public class StainedGlassFilter {
         }
         centerPoints = new ArrayList<>();
         regions = new HashMap<>();
+        initializeCenterPoints(points);
+        splitRegions();
+        applyFilter();
+    }
+
+    private void initializeCenterPoints(int points) {
         Random random = new Random();
         for(int i = 0; i < points; i++) {
             centerPoints.add(new Point(random.nextInt(inputImage.getWidth()), random.nextInt(inputImage.getHeight())));
             regions.put(centerPoints.get(i), new ArrayList<Point>());
         }
-        Point currentPoint = null;
-        Point nearestPoint = null;
-        for(int i = 0; i < inputImage.getWidth(); i++) {
-            for(int j = 0; j < inputImage.getHeight(); j++) {
-                double smallestDistance = inputImage.getWidth() + inputImage.getHeight();
-                currentPoint = new Point(i, j);
-                for(Point p : centerPoints) {
-                    if(getDistance(currentPoint, p) < smallestDistance){
-                        smallestDistance = getDistance(currentPoint, p);
-                        nearestPoint = p;
-                    }
-                }
-                regions.get(nearestPoint).add(currentPoint);
-            }
-        }
-        
+    }
+
+    private void applyFilter() {
         outputImage = inputImage;
         for(Point p: regions.keySet()){
             int red = 0;
@@ -64,6 +56,24 @@ public class StainedGlassFilter {
             }
             for(Point p2: regions.get(p)){
                 outputImage.setRGB(p2.x, p2.y, new Color(red/regions.get(p).size(), green/regions.get(p).size(), blue/regions.get(p).size()).getRGB());
+            }
+        }
+    }
+
+    private void splitRegions() {
+        Point currentPoint = null;
+        Point nearestPoint = null;
+        for(int i = 0; i < inputImage.getWidth(); i++) {
+            for(int j = 0; j < inputImage.getHeight(); j++) {
+                double smallestDistance = inputImage.getWidth() + inputImage.getHeight();
+                currentPoint = new Point(i, j);
+                for(Point p : centerPoints) {
+                    if(getDistance(currentPoint, p) < smallestDistance){
+                        smallestDistance = getDistance(currentPoint, p);
+                        nearestPoint = p;
+                    }
+                }
+                regions.get(nearestPoint).add(currentPoint);
             }
         }
     }
